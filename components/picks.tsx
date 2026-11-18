@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
 import { artists, type Artist, type Selections } from "../data/lineup";
 import { decodeSelections, priorities } from "../lib/selections";
+import { createShareData, createShareEmail } from "../lib/sharing";
 import { useFestivalSelections } from "./use-festival-selections";
 
 function PickGroups({ picks, render }: { picks: Selections; render: (artist: Artist) => ReactNode }) {
@@ -20,35 +21,36 @@ function PickGroups({ picks, render }: { picks: Selections; render: (artist: Art
   });
 }
 
-function SharePicks({ encoded }: { encoded: string }) {
+function SharePicks({ picks }: { picks: Selections }) {
   const [status, setStatus] = useState("");
   const [manualUrl, setManualUrl] = useState("");
 
   async function share() {
-    const url = new URL("/shared", window.location.origin);
-    url.searchParams.set("v", "1");
-    url.searchParams.set("p", encoded);
+    const data = createShareData(window.location.origin, picks);
     setStatus("");
     setManualUrl("");
     if (navigator.share) {
       try {
-        await navigator.share({ title: "My Glasto 2027 picks", url: url.href });
+        await navigator.share(data);
         return;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
     }
     try {
-      await navigator.clipboard.writeText(url.href);
-      setStatus("Link copied.");
+      await navigator.clipboard.writeText(data.url);
+      setStatus("Link copied");
     } catch {
-      setManualUrl(url.href);
+      setManualUrl(data.url);
     }
   }
 
   return (
     <div>
       <button type="button" className="share-action" onClick={share}>Share my picks <span aria-hidden="true">↗</span></button>
+      <button type="button" className="text-action" onClick={() => {
+        window.location.href = createShareEmail(createShareData(window.location.origin, picks));
+      }}>Email my picks</button>
       <span role="status" className="share-status">{status}</span>
       {manualUrl && <label className="manual-link">Copy this link
         <input readOnly value={manualUrl} onFocus={(event) => event.target.select()} />
@@ -75,7 +77,7 @@ export function MyGlasto() {
       ) : (
         <>
           <p className="subline" role="status">{picks.count} {picks.count === 1 ? "artist" : "artists"}</p>
-          <SharePicks encoded={picks.exportPicks()} />
+          <SharePicks picks={picks.selections} />
           <PickGroups picks={picks.selections} render={({ id, name }) => (
             <>
               <button type="button" id={`pick-${id}`} className="artist-row disclosure"

@@ -4,6 +4,7 @@ import { artists, filterArtists, genres } from "../data/lineup.ts";
 import {
   decodeSelections, encodeSelections, mergeSelections, readSelections, removeSelection, toggleSelection,
 } from "../lib/selections.ts";
+import { createShareData, createShareEmail } from "../lib/sharing.ts";
 
 test("all 65 artists have unique IDs and valid genre tags", () => {
   assert.equal(filterArtists("", "All").length, 65);
@@ -39,13 +40,38 @@ test("versioned storage retains valid priorities and tolerates invalid records",
 test("share URLs round trip with deterministic IDs and preserve local priorities on import", () => {
   const encoded = encodeSelections({ flo: "must", cher: "maybe", nao: "want" });
   assert.equal(encoded, "cher:b,flo:m,nao:w");
-  const url = new URL("https://example.com/shared");
-  url.searchParams.set("v", "1");
-  url.searchParams.set("p", encoded);
+  const url = new URL(createShareData("https://example.com", { flo: "must", cher: "maybe", nao: "want" }).url);
+  assert.equal(url.href, "https://example.com/shared?v=1&p=cher%3Ab%2Cflo%3Am%2Cnao%3Aw");
   const incoming = decodeSelections(url.searchParams.get("p"), url.searchParams.get("v"));
   assert.deepEqual(incoming, { flo: "must", cher: "maybe", nao: "want" });
   assert.deepEqual(mergeSelections({ flo: "want", underworld: "must" }, incoming),
     { flo: "want", cher: "maybe", nao: "want", underworld: "must" });
+});
+
+test("native share data names the first four picks in My Glasto order", () => {
+  const origin = "https://example.com";
+  assert.equal(createShareData(origin, { flo: "maybe" }).text, "FLO");
+  assert.equal(createShareData(origin, {
+    flo: "must", "little-simz": "must", thundercat: "want", "ezra-collective": "want",
+  }).text, "Little Simz, FLO, Ezra Collective, Thundercat");
+
+  const data = createShareData(origin, {
+    flo: "must", "little-simz": "must", thundercat: "want", "ezra-collective": "want", cher: "maybe",
+  });
+  assert.equal(data.title, "My Glasto 2027 picks");
+  assert.equal(data.text, "Little Simz, FLO, Ezra Collective, Thundercat + 1 more");
+  assert.ok(data.url.startsWith(origin + "/shared?v=1&p="));
+});
+
+test("email draft uses an encoded subject and a plain-text body", () => {
+  const data = createShareData("https://example.com", { adela: "must", "chase-status": "want" });
+  const email = createShareEmail(data);
+  assert.match(email, /^mailto:\?subject=My%20Glasto%202027%20picks&body=/);
+  const params = new URL(email).searchParams;
+  assert.deepEqual([...params.keys()], ["subject", "body"]);
+  assert.equal(params.get("subject"), "My Glasto 2027 picks");
+  assert.equal(params.get("body"),
+    `Here are my Glasto 2027 picks:\r\n\r\nAdéla, Chase & Status\r\n\r\nView my picks:\r\n${data.url}`);
 });
 
 test("share parser skips malformed entries and uses the first valid duplicate", () => {

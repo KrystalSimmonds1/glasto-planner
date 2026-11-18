@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { type Priority, type Selections } from "../data/lineup";
 import {
-  encodeSelections, mergeSelections, readSelections, removeSelection, storageKey, toggleSelection,
+  mergeSelections, readSelections, removeSelection, storageKey, toggleSelection,
 } from "../lib/selections";
 
 const empty = { selections: {} as Selections, ready: false };
@@ -58,7 +58,6 @@ export function useFestivalSelections() {
     setPriority: (id: string, priority: Priority) => update((current) =>
       current[id] ? { ...current, [id]: priority } : current),
     clear: () => update(() => ({})),
-    exportPicks: () => encodeSelections(selections),
     importPicks: (incoming: Selections) => update((current) => mergeSelections(current, incoming)),
   };
 }
