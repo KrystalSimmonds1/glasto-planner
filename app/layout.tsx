@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Header } from "../components/header";
 import "./globals.css";
@@ -22,6 +23,7 @@ export default function Layout({ children }: Readonly<{ children: React.ReactNod
         <footer className="wrap footer">
           Unofficial Glastonbury planning tool. Not affiliated with Glastonbury Festival.
         </footer>
+        <Analytics />
       </body>
     </html>
   );
