@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
 import { artists, type Artist, type Selections } from "../data/lineup";
 import { decodeSelections, priorities } from "../lib/selections";
-import { createShareData, createShareEmail } from "../lib/sharing";
+import { createShareData } from "../lib/sharing";
 import { useFestivalSelections } from "./use-festival-selections";
 
 function PickGroups({ picks, render }: { picks: Selections; render: (artist: Artist) => ReactNode }) {
@@ -54,9 +54,10 @@ function SharePicks({ picks }: { picks: Selections }) {
 
   return (
     <div>
-      <button type="button" className="share-action" onClick={share}>Share my picks <span aria-hidden="true">↗</span></button>
-      <a className="text-action inline-flex items-center" href={createShareEmail(data.url, picks)}>Email my picks</a>
-      <button type="button" className="text-action" onClick={copyLink}>Copy link</button>
+      <div className="inline-flex flex-wrap items-center gap-x-2">
+        <button type="button" className="share-action" onClick={share}>Share my picks <span aria-hidden="true">↗</span></button>
+        <button type="button" className="text-action" onClick={copyLink}>Copy link</button>
+      </div>
       <span role="status" className="share-status">{status}</span>
       {manualUrl && <label className="manual-link">Copy this link
         <input readOnly value={manualUrl} onFocus={(event) => event.target.select()} />
