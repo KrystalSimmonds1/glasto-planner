@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SharedPicks } from "../../components/picks";
+import { shareTitle } from "../../lib/sharing";
 
-export const metadata: Metadata = { title: "Shared picks", robots: { index: false } };
+const description = "See the artists on this shared Glasto 2027 list. An unofficial Glastonbury planner.";
+export const metadata: Metadata = {
+  title: { absolute: shareTitle },
+  description,
+  openGraph: { title: shareTitle, description, type: "website", locale: "en_GB" },
+  robots: { index: false },
+};
 
 export default function Page() {
   return (

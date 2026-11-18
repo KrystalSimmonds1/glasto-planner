@@ -24,12 +24,13 @@ function PickGroups({ picks, render }: { picks: Selections; render: (artist: Art
 function SharePicks({ picks }: { picks: Selections }) {
   const [status, setStatus] = useState("");
   const [manualUrl, setManualUrl] = useState("");
+  // My Glasto renders these controls after the browser has loaded the saved picks.
+  const data = createShareData(window.location.origin, picks);
 
   async function share() {
-    const data = createShareData(window.location.origin, picks);
-    setStatus("");
-    setManualUrl("");
     if (navigator.share) {
+      setStatus("");
+      setManualUrl("");
       try {
         await navigator.share(data);
         return;
@@ -37,6 +38,12 @@ function SharePicks({ picks }: { picks: Selections }) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
     }
+    await copyLink();
+  }
+
+  async function copyLink() {
+    setStatus("");
+    setManualUrl("");
     try {
       await navigator.clipboard.writeText(data.url);
       setStatus("Link copied");
@@ -48,9 +55,8 @@ function SharePicks({ picks }: { picks: Selections }) {
   return (
     <div>
       <button type="button" className="share-action" onClick={share}>Share my picks <span aria-hidden="true">↗</span></button>
-      <button type="button" className="text-action" onClick={() => {
-        window.location.href = createShareEmail(createShareData(window.location.origin, picks));
-      }}>Email my picks</button>
+      <a className="text-action inline-flex items-center" href={createShareEmail(data.url, picks)}>Email my picks</a>
+      <button type="button" className="text-action" onClick={copyLink}>Copy link</button>
       <span role="status" className="share-status">{status}</span>
       {manualUrl && <label className="manual-link">Copy this link
         <input readOnly value={manualUrl} onFocus={(event) => event.target.select()} />

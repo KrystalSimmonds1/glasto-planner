@@ -25,6 +25,8 @@ The browser stores versioned picks in localStorage. New picks start at Want to s
 
 Share links use `/shared?v=1&p=…` with sorted artist IDs and one-letter priority codes. The recipient previews the list before importing. Import adds new IDs and preserves existing picks and priorities.
 
+The static export serves the same link-preview metadata for every shared list. Artist names are decoded in the browser after the page loads, so the Open Graph description is generic.
+
 ## Deploy to Vercel
 
 Import the repository as a Next.js project, use the Node.js 22.x runtime or newer and keep the default build command. No environment variables or storage services are required. After deployment, open a direct `/shared` link and verify sharing from a phone.

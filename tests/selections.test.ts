@@ -48,30 +48,33 @@ test("share URLs round trip with deterministic IDs and preserve local priorities
     { flo: "want", cher: "maybe", nao: "want", underworld: "must" });
 });
 
-test("native share data names the first four picks in My Glasto order", () => {
+test("native share data contains only the title and the URL", () => {
   const origin = "https://example.com";
-  assert.equal(createShareData(origin, { flo: "maybe" }).text, "FLO");
-  assert.equal(createShareData(origin, {
-    flo: "must", "little-simz": "must", thundercat: "want", "ezra-collective": "want",
-  }).text, "Little Simz, FLO, Ezra Collective, Thundercat");
+  assert.deepEqual(createShareData(origin, { flo: "maybe" }), {
+    title: "My Glasto 2027 picks",
+    url: "https://example.com/shared?v=1&p=flo%3Ab",
+  });
+});
 
-  const data = createShareData(origin, {
+test("email summary names the first four picks in My Glasto order", () => {
+  const url = "https://example.com/shared";
+  const email = createShareEmail(url, {
     flo: "must", "little-simz": "must", thundercat: "want", "ezra-collective": "want", cher: "maybe",
   });
-  assert.equal(data.title, "My Glasto 2027 picks");
-  assert.equal(data.text, "Little Simz, FLO, Ezra Collective, Thundercat + 1 more");
-  assert.ok(data.url.startsWith(origin + "/shared?v=1&p="));
+  assert.match(new URL(email).searchParams.get("body") ?? "",
+    /Little Simz, FLO, Ezra Collective, Thundercat \+ 1 more/);
 });
 
 test("email draft uses an encoded subject and a plain-text body", () => {
-  const data = createShareData("https://example.com", { adela: "must", "chase-status": "want" });
-  const email = createShareEmail(data);
+  const picks = { adela: "must", "chase-status": "want" } as const;
+  const { url } = createShareData("https://example.com", picks);
+  const email = createShareEmail(url, picks);
   assert.match(email, /^mailto:\?subject=My%20Glasto%202027%20picks&body=/);
   const params = new URL(email).searchParams;
   assert.deepEqual([...params.keys()], ["subject", "body"]);
   assert.equal(params.get("subject"), "My Glasto 2027 picks");
   assert.equal(params.get("body"),
-    `Here are my Glasto 2027 picks:\r\n\r\nAdéla, Chase & Status\r\n\r\nView my picks:\r\n${data.url}`);
+    `Here are my Glasto 2027 picks:\r\n\r\nAdéla, Chase & Status\r\n\r\nView my picks:\r\n${url}`);
 });
 
 test("share parser skips malformed entries and uses the first valid duplicate", () => {
